@@ -91,12 +91,29 @@ def main() -> int:
 
     ops_file = Path(args.ops_file)
     if not ops_file.exists():
-        raise FileNotFoundError(f"文件不存在: {ops_file}")
+        print(f"❌ 文件不存在: {ops_file}")
+        print("ℹ️ 请先初始化模板：")
+        print(
+            "uv run python skills/site-config-sync/scripts/init_ops_secrets.py "
+            f"--ops-file {args.ops_file}"
+        )
+        return 2
 
-    with ops_file.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with ops_file.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON 解析失败: {e}")
+        print(f"ℹ️ 请检查文件格式: {ops_file}")
+        return 2
 
-    linuxdo_accounts = pick_linuxdo_accounts(data, args.linuxdo_username, args.linuxdo_password)
+    try:
+        linuxdo_accounts = pick_linuxdo_accounts(data, args.linuxdo_username, args.linuxdo_password)
+    except ValueError as e:
+        print(f"❌ {e}")
+        print("ℹ️ 可通过参数显式传入：--linuxdo-username 和 --linuxdo-password")
+        return 2
+
     upsert_account(data, args.provider, args.name, linuxdo_accounts)
 
     if args.origin:

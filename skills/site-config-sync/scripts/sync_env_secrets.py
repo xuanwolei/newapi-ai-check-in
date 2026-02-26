@@ -8,12 +8,10 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 from pathlib import Path
 import urllib.error
 import urllib.request
-
-from nacl.public import PublicKey, SealedBox
-
 
 def request(token: str, method: str, url: str, data: dict | None = None) -> tuple[int, dict | str | None]:
     """发送 GitHub API 请求。"""
@@ -54,20 +52,61 @@ def main() -> int:
 
     ops_file = Path(args.ops_file)
     if not ops_file.exists():
-        raise FileNotFoundError(f"文件不存在: {ops_file}")
+        print(f"❌ 文件不存在: {ops_file}")
+        print("ℹ️ 请先初始化模板：")
+        print(
+            "uv run python skills/site-config-sync/scripts/init_ops_secrets.py "
+            f"--ops-file {args.ops_file}"
+        )
+        return 2
 
-    with ops_file.open("r", encoding="utf-8") as f:
-        ops = json.load(f)
+    try:
+        with ops_file.open("r", encoding="utf-8") as f:
+            ops = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON 解析失败: {e}")
+        print(f"ℹ️ 请检查文件格式: {ops_file}")
+        return 2
 
     repo = ops.get("repo", "")
     env_name = ops.get("environment", "production")
-    token = ops.get("github_pat", "")
-    if not repo or not token:
-        raise ValueError("ops-secrets.json 缺少 repo 或 github_pat")
+    # 优先环境变量，避免 token 长期明文落盘
+    token = os.getenv("GITHUB_PAT", "").strip() or ops.get("github_pat", "").strip()
+
+    if not repo:
+        print("❌ 缺少 repo 配置（应为 owner/repo）")
+        print("ℹ️ 可在 ops-secrets.json 中填写，例如: xuanwolei/newapi-ai-check-in")
+        return 2
+
+    if not token:
+        print("❌ 缺少 GitHub Token")
+        print("ℹ️ 请配置以下任一方式：")
+        print("1) 环境变量 GITHUB_PAT")
+        print("2) ops-secrets.json 字段 github_pat")
+        print("ℹ️ Token 类型应为 GitHub PAT（非 GitLab Token），至少包含 scope: repo, workflow")
+        return 2
+
+    accounts = ops.get("accounts", [])
+    if not isinstance(accounts, list) or len(accounts) == 0:
+        print("❌ accounts 不能为空，且必须为数组")
+        return 2
+
+    providers = ops.get("providers", {})
+    if not isinstance(providers, dict):
+        print("❌ providers 必须为对象（JSON object）")
+        return 2
+
+    try:
+        from nacl.public import PublicKey, SealedBox
+    except ModuleNotFoundError:
+        print("❌ 缺少依赖: pynacl")
+        print("ℹ️ 请使用以下命令运行：")
+        print("uv run --with pynacl python skills/site-config-sync/scripts/sync_env_secrets.py")
+        return 2
 
     payloads = {
-        "ACCOUNTS": json.dumps(ops.get("accounts", []), ensure_ascii=False, separators=(",", ":")),
-        "PROVIDERS": json.dumps(ops.get("providers", {}), ensure_ascii=False, separators=(",", ":")),
+        "ACCOUNTS": json.dumps(accounts, ensure_ascii=False, separators=(",", ":")),
+        "PROVIDERS": json.dumps(providers, ensure_ascii=False, separators=(",", ":")),
     }
 
     dingtalk = ops.get("dingtalk_webhook", "")

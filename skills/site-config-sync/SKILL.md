@@ -15,6 +15,16 @@
 
 ## 标准流程
 
+0. 首次使用先初始化模板：  
+
+```bash
+uv run python skills/site-config-sync/scripts/init_ops_secrets.py \
+  --repo owner/repo \
+  --environment production
+```
+
+建议：`github_pat` 可不写入文件，改用环境变量 `GITHUB_PAT`。
+
 1. 更新/新增站点账号（写入 `.local/ops-secrets.json`）  
    内置 provider 示例（如 `anyrouter`）：
 
@@ -45,6 +55,12 @@ uv run python skills/site-config-sync/scripts/upsert_site_account.py \
 4. 同步 secrets 到 GitHub（默认同步 `ACCOUNTS`、`PROVIDERS`、`DINGDING_WEBHOOK`）：
 
 ```bash
+# 推荐先设置环境变量，避免 token 落盘
+# Windows PowerShell:
+# $env:GITHUB_PAT='ghp_xxx'
+# macOS/Linux:
+# export GITHUB_PAT='ghp_xxx'
+
 uv run --with pynacl python skills/site-config-sync/scripts/sync_env_secrets.py
 ```
 
@@ -59,3 +75,4 @@ uv run python -c "import json,os;from utils.config import AppConfig;d=json.load(
 1. `.local/ops-secrets.json` 包含敏感信息，不可提交到 git。
 2. 同步脚本不会打印 secret 明文。
 3. 若 token 或账号泄漏，必须立即轮换。
+4. 同步使用的是 GitHub PAT，不是 GitLab Token；建议最小权限 `repo` + `workflow`。

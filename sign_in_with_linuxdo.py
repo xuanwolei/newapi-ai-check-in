@@ -156,12 +156,58 @@ class LinuxDoSignIn:
                                 except Exception as solve_err:
                                     print(f"⚠️ {self.account_name}: Auto-solve failed: {solve_err}")
 
-                            await page.fill("#login-account-name", self.username)
-                            await page.wait_for_timeout(2000)
-                            await page.fill("#login-account-password", self.password)
-                            await page.wait_for_timeout(2000)
-                            await page.click("#login-button")
-                            await page.wait_for_timeout(10000)
+                            # Cloudflare 挑战后登录表单可能尚未出现，重试等待并必要时刷新登录页
+                            form_ready = False
+                            for retry in range(3):
+                                try:
+                                    await page.wait_for_selector("#login-account-name", timeout=10000)
+                                    await page.wait_for_selector("#login-account-password", timeout=10000)
+                                    form_ready = True
+                                    break
+                                except Exception as wait_err:
+                                    current_url = page.url
+                                    print(
+                                        f"⚠️ {self.account_name}: Login form not ready "
+                                        f"(attempt {retry + 1}/3), url={current_url}: {wait_err}"
+                                    )
+
+                                    # 如果已经出现授权按钮或已跳转回应用页面，说明无需再填账号密码
+                                    allow_btn = await page.query_selector('a[href^="/oauth2/approve"]')
+                                    if allow_btn:
+                                        print(
+                                            f"ℹ️ {self.account_name}: Approve button already present, "
+                                            "skip credential fill"
+                                        )
+                                        break
+                                    if current_url.startswith(self.provider_config.origin):
+                                        print(
+                                            f"ℹ️ {self.account_name}: Already redirected to provider page, "
+                                            "skip credential fill"
+                                        )
+                                        break
+
+                                    if retry < 2:
+                                        try:
+                                            await page.goto("https://linux.do/login", wait_until="domcontentloaded")
+                                            await page.wait_for_timeout(5000)
+                                        except Exception as nav_err:
+                                            print(
+                                                f"⚠️ {self.account_name}: Failed to reload login page on retry: "
+                                                f"{nav_err}"
+                                            )
+
+                            if form_ready:
+                                await page.fill("#login-account-name", self.username)
+                                await page.wait_for_timeout(2000)
+                                await page.fill("#login-account-password", self.password)
+                                await page.wait_for_timeout(2000)
+                                await page.click("#login-button")
+                                await page.wait_for_timeout(10000)
+                            else:
+                                print(
+                                    f"⚠️ {self.account_name}: Login form still unavailable after retries, "
+                                    "continue to authorization step"
+                                )
 
                             await save_page_content_to_file(page, "sign_in_result", self.account_name, prefix="linuxdo")
 

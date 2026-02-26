@@ -105,6 +105,44 @@ Affs:
 - `ACCOUNTS_LINUX_DO`
 - `ACCOUNTS_GITHUB`
 
+#### 2.3 借助 AI 自动维护配置（推荐）
+
+如果你希望后续“新增站点 / 修改账号 / 同步 Secrets”都由 AI 自动完成，可使用项目内置 Skill：
+
+- 入口文档：`skills/site-config-sync/SKILL.md`
+- 脚本目录：`skills/site-config-sync/scripts/`
+
+推荐流程：
+
+1. 初始化本地模板（首次一次）：
+
+```bash
+uv run python skills/site-config-sync/scripts/init_ops_secrets.py --repo owner/repo --environment production
+```
+
+2. 增加或修改站点：
+
+```bash
+# 内置 provider 示例
+uv run python skills/site-config-sync/scripts/upsert_site_account.py --provider anyrouter --name anyrouter-linuxdo
+
+# 自定义站点示例
+uv run python skills/site-config-sync/scripts/upsert_site_account.py --provider mysite --origin https://example.com --name mysite-linuxdo
+```
+
+3. 同步到 GitHub Environment Secrets：
+
+```bash
+# 建议通过环境变量提供 PAT，避免明文写入文件
+# PowerShell: $env:GITHUB_PAT='ghp_xxx'
+uv run --with pynacl python skills/site-config-sync/scripts/sync_env_secrets.py
+```
+
+说明：
+- 同步会更新 `ACCOUNTS`、`PROVIDERS`（以及可选 `DINGDING_WEBHOOK`）。
+- Token 类型是 **GitHub PAT**（非 GitLab Token），建议最小权限：`repo` + `workflow`。
+- `.local/ops-secrets.json` 仅供本地使用，请勿提交到 git。
+
 ### 3 多账号配置格式
 > 如果未提供 `name` 字段，会使用 `{provider.name} 1`、`{provider.name} 2` 等默认名称。  
 > 配置中 `cookies`、`github`、`linux.do` 必须至少配置 1 个。  
