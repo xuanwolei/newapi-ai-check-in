@@ -83,6 +83,28 @@ Affs:
 ]
 ```
 
+#### 2.2 最小可运行配置（先跑通）
+
+如果只想先让 Action 跑通，最少只需要配置 `ACCOUNTS`（`PROVIDERS` 可不配，程序会使用内置 provider）。
+
+示例（将 Linux.do 账号直接写进 `ACCOUNTS`，无需额外配置 `ACCOUNTS_LINUX_DO`）：
+
+```json
+[
+  {
+    "name": "my-anyrouter-linuxdo",
+    "provider": "anyrouter",
+    "linux.do": [
+      { "username": "你的linuxdo用户名", "password": "你的linuxdo密码" }
+    ]
+  }
+]
+```
+
+如果在 `ACCOUNTS` 中使用 `linux.do: true` 或 `github: true`，则必须额外配置对应的全局账号：
+- `ACCOUNTS_LINUX_DO`
+- `ACCOUNTS_GITHUB`
+
 ### 3 多账号配置格式
 > 如果未提供 `name` 字段，会使用 `{provider.name} 1`、`{provider.name} 2` 等默认名称。  
 > 配置中 `cookies`、`github`、`linux.do` 必须至少配置 1 个。  
@@ -96,7 +118,7 @@ Affs:
 ```json
 {"provider": "anyrouter", "linux.do": true}
 ```
-当设置为 `true` 时，使用 `LINUX_DO_ACCOUNTS` 或 `GITHUB_ACCOUNTS` 中配置的所有账号。
+当设置为 `true` 时，使用 `ACCOUNTS_LINUX_DO` 或 `ACCOUNTS_GITHUB` 中配置的所有账号。
 
 **2. dict 类型 - 单个账号**
 ```json
@@ -168,11 +190,11 @@ Affs:
 - `cookies`(可选)：用于身份验证的 cookies 数据
 - `api_user`(cookies 设置时必需)：用于请求头的 new-api-user 参数
 - `linux.do`(可选)：用于登录身份验证，支持三种格式：
-  - `true`：使用 `LINUX_DO_ACCOUNTS` 中的全局账号
+  - `true`：使用 `ACCOUNTS_LINUX_DO` 中的全局账号
   - `{"username": "xxx", "password": "xxx"}`：单个账号
   - `[{"username": "xxx", "password": "xxx"}, ...]`：多个账号
 - `github`(可选)：用于登录身份验证，支持三种格式：
-  - `true`：使用 `GITHUB_ACCOUNTS` 中的全局账号
+  - `true`：使用 `ACCOUNTS_GITHUB` 中的全局账号
   - `{"username": "xxx", "password": "xxx"}`：单个账号
   - `[{"username": "xxx", "password": "xxx"}, ...]`：多个账号
 
