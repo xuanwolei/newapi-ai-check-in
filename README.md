@@ -112,6 +112,22 @@ Affs:
 - 入口文档：`skills/site-config-sync/SKILL.md`
 - 脚本目录：`skills/site-config-sync/scripts/`
 
+##### 2.3.1 准备 GitHub PAT（必须用户提供）
+
+出于安全原因，AI 无法替你创建 GitHub Token。你需要先手动创建并提供给脚本（环境变量 `GITHUB_PAT` 或 `ops-secrets.json.github_pat`）。
+
+创建步骤（`Tokens (classic)`）：
+1. 打开 GitHub：`Settings -> Developer settings -> Personal access tokens -> Tokens (classic)`
+2. 点击 `Generate new token (classic)`
+3. 选择过期时间（建议 30/90 天）
+4. 勾选最小权限：`repo`、`workflow`
+5. 生成后立即复制（只显示一次）
+
+注意：
+- 这里需要的是 **GitHub PAT**，不是 GitLab Token。
+- 如果仓库在组织并开启了 SSO，需要额外做 `Configure SSO` 授权。
+- 不要与 `ACTIONS_TRIGGER_PAT`（用于 immortality workflow）混淆。
+
 推荐流程：
 
 1. 初始化本地模板（首次一次）：

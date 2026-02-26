@@ -13,6 +13,20 @@
 - 配置文件：`.local/ops-secrets.json`
 - 脚本目录：`skills/site-config-sync/scripts/`
 
+## 前置准备（用户侧）
+
+1. 用户必须先提供 GitHub PAT（AI 无法代创建）。
+2. Token 类型：`Tokens (classic)`。
+3. 最小权限：`repo` + `workflow`。
+4. 该 Token 是 GitHub PAT，不是 GitLab Token。
+5. 可通过两种方式提供：
+   - 环境变量 `GITHUB_PAT`
+   - `.local/ops-secrets.json` 的 `github_pat` 字段
+
+快速获取路径：`GitHub Settings -> Developer settings -> Personal access tokens -> Tokens (classic)`。
+
+---
+
 ## 标准流程
 
 0. 首次使用先初始化模板：  

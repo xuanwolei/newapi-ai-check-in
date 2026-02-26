@@ -33,3 +33,4 @@ uv run --with pynacl python skills/site-config-sync/scripts/sync_env_secrets.py
 
 - `ops-secrets.json` 建议放在 `.local/`，且不得提交到 git。
 - 同步使用 GitHub PAT（`repo` + `workflow`），不是 GitLab Token。
+- GitHub PAT 需用户先手动创建并提供（获取说明见 `README.md` 的 `2.3.1`）。
